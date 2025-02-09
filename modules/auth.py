@@ -1,7 +1,6 @@
 # modules/auth.py
 import streamlit as st
 import hashlib
-import re
 from sqlalchemy import create_engine, Column, Integer, String
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -63,44 +62,6 @@ def authenticate_user(username, password):
         return True, user.role
     return False, None
 
-# ---------------------- Validation Functions ---------------------- #
-
-def validate_username(username):
-    """
-    Validates the username.
-    - Must not be empty.
-    - Must be at least 3 characters long.
-    - Can only contain letters, numbers, and underscores.
-    """
-    if not username or username.strip() == "":
-        return False, "Username cannot be empty."
-    if len(username) < 3:
-        return False, "Username must be at least 3 characters long."
-    if not re.match("^[A-Za-z0-9_]+$", username):
-        return False, "Username can only contain letters, numbers, and underscores."
-    return True, ""
-
-def validate_password(password):
-    """
-    Validates the password.
-    - Must not be empty.
-    - Must be at least 8 characters long.
-    - Must contain at least one uppercase letter, one lowercase letter, and one number.
-    """
-    if not password:
-        return False, "Password cannot be empty."
-    if len(password) < 8:
-        return False, "Password must be at least 8 characters long."
-    if not any(c.isupper() for c in password):
-        return False, "Password must contain at least one uppercase letter."
-    if not any(c.islower() for c in password):
-        return False, "Password must contain at least one lowercase letter."
-    if not any(c.isdigit() for c in password):
-        return False, "Password must contain at least one number."
-    return True, ""
-
-# ---------------------- Login / Registration UI ---------------------- #
-
 def login():
     """
     Display the login (and registration) form and handle user authentication.
@@ -112,39 +73,34 @@ def login():
     username = st.text_input("Username")
     password = st.text_input("Password", type="password")
     
+    #Validations for the username and password
+    #if username is null then show error message
+    if username is None:
+        st.error("Please enter a valid username")
+        
+    if password is None:
+        st.error("Please enter a valid password")
+        
+
     # Buttons for login and registration actions.
     login_button = st.button("Login")
     register_button = st.button("Register")
 
     # Process the login button click.
     if login_button:
-        if not username:
-            st.error("Please enter your username.")
-        elif not password:
-            st.error("Please enter your password.")
+        success, role = authenticate_user(username, password)
+        if success:
+            st.session_state["authenticated"] = True
+            st.session_state["username"] = username
+            st.session_state["role"] = role
+            st.success(f"Logged in as {username} ({role})")
         else:
-            success, role = authenticate_user(username, password)
-            if success:
-                st.session_state["authenticated"] = True
-                st.session_state["username"] = username
-                st.session_state["role"] = role
-                st.success(f"Logged in as {username} ({role})")
-            else:
-                st.error("Invalid credentials. Please try again.")
+            st.error("Invalid credentials. Please try again.")
 
     # Process the registration button click.
     if register_button:
-        # Validate username and password before registration.
-        valid_username, username_error = validate_username(username)
-        valid_password, password_error = validate_password(password)
-        
-        if not valid_username:
-            st.error(username_error)
-        elif not valid_password:
-            st.error(password_error)
+        success, msg = register_user(username, password)
+        if success:
+            st.success(msg)
         else:
-            success, msg = register_user(username, password)
-            if success:
-                st.success(msg)
-            else:
-                st.error(msg)
+            st.error(msg)

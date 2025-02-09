@@ -37,7 +37,7 @@ def app():
     # Translation Service Section
     st.header("Translation Service")
     text_to_translate = st.text_area("Enter text to translate:")
-    target_language = st.selectbox("Select target language", options=["en", "es", "fr", "de", "zh-cn"], index=0)
+    target_language = st.selectbox("Select target language", options=["en", "hi", "es", "fr", "de", "zh-cn"], index=0)
     if st.button("Translate Text"):
         if text_to_translate:
             translated = translate_text(text_to_translate, target_language)
