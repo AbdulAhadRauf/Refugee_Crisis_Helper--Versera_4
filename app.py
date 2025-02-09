@@ -39,7 +39,7 @@ def main():
          cultural_integration.app()
     elif module_choice == "Hygiene Compliance Auditor":
          hygiene_auditor.app()
-    elif module_choice == "Store Locaator":
+    elif module_choice == "Store Locator":
          store_locator.app()
 
 if __name__ == "__main__":
