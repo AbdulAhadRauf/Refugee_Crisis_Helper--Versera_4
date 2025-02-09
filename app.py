@@ -16,10 +16,10 @@ def main():
     module_choice = st.sidebar.selectbox(
         "Choose a Module",
         [
-            "AI-Driven Food Distribution Optimizer",
             "Multilingual Healthcare Chatbot",
             "Waste-to-Resource AI Platform",
             "AI-Powered Cultural Integration Hub",
+            "AI-Driven Food Distribution Optimizer",
             "Hygiene Compliance Auditor"
         ]
     )
@@ -28,12 +28,12 @@ def main():
     st.sidebar.write(f"Logged in as: {st.session_state.get('username', 'Unknown')}")
 
     # Load the appropriate module based on the user's selection.
-    if module_choice == "AI-Driven Food Distribution Optimizer":
-         food_optimizer.app()
-    elif module_choice == "Multilingual Healthcare Chatbot":
+    if module_choice == "Multilingual Healthcare Chatbot":
          healthcare_chatbot.app()
     elif module_choice == "Waste-to-Resource AI Platform":
          waste_to_resource.app()
+    elif module_choice == "AI-Driven Food Distribution Optimizer":
+         food_optimizer.app()
     elif module_choice == "AI-Powered Cultural Integration Hub":
          cultural_integration.app()
     elif module_choice == "Hygiene Compliance Auditor":
