@@ -1,6 +1,6 @@
 # app.py
 import streamlit as st
-from modules import auth, food_optimizer, healthcare_chatbot, waste_to_resource, cultural_integration, hygiene_auditor
+from modules import auth, food_optimizer, healthcare_chatbot, waste_to_resource, cultural_integration, hygiene_auditor, store_locator
 
 def main():
     # Initialize the database (creates tables if not present)
@@ -20,7 +20,8 @@ def main():
             "Waste-to-Resource AI Platform",
             "AI-Powered Cultural Integration Hub",
             "AI-Driven Food Distribution Optimizer",
-            "Hygiene Compliance Auditor"
+            "Hygiene Compliance Auditor",
+            "Store Locator"
         ]
     )
     
@@ -38,6 +39,8 @@ def main():
          cultural_integration.app()
     elif module_choice == "Hygiene Compliance Auditor":
          hygiene_auditor.app()
+    elif module_choice == "Store Locaator":
+         store_locator.app()
 
 if __name__ == "__main__":
     main()
