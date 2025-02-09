@@ -9,6 +9,6 @@ pulp
 google-generativeai
 geopy
 pydeck
-opencv-python
 pillow
 python-dotenv
+opencv-python-headless
