@@ -1,7 +1,10 @@
+# modules/store_locator.py
 import streamlit as st
 import pandas as pd
 import math
 import pydeck as pdk
+from geopy.geocoders import Nominatim
+from geopy.exc import GeocoderTimedOut
 
 def haversine_distance(lat1, lon1, lat2, lon2):
     """
@@ -47,11 +50,30 @@ def find_nearest_store(user_location, stores):
             nearest_store = store
     return nearest_store, min_distance
 
+def geocode_city(city_name):
+    """
+    Convert a city name into latitude and longitude using the Nominatim geocoder.
+    
+    Parameters:
+        city_name (str): The name of the city.
+        
+    Returns:
+        (lat, lon) tuple if successful; otherwise, None.
+    """
+    try:
+        geolocator = Nominatim(user_agent="store_locator_app")
+        location = geolocator.geocode(city_name, timeout=10)
+        if location:
+            return (location.latitude, location.longitude)
+        else:
+            return None
+    except GeocoderTimedOut:
+        return None
+
 def app():
-    st.title("Nearest Store Finder")
+    st.title("Nearest Store Finder by City")
     st.write(
-        "Find the nearest store based on your current location.\n\n"
-        "Enter your coordinates and click the **Find Nearest Store** button."
+        "Enter the name of your city below to find the nearest store from our pre-defined list of store locations."
     )
     
     # Pre-defined store locations (example coordinates)
@@ -63,55 +85,61 @@ def app():
         {"name": "Store E", "lat": 33.4484, "lon": -112.0740}   # Phoenix
     ]
     
-    st.header("Your Current Location")
-    user_lat = st.number_input("Enter your latitude:", format="%.6f", value=39.0, step=0.0001)
-    user_lon = st.number_input("Enter your longitude:", format="%.6f", value=-98.0, step=0.0001)
-    user_location = (user_lat, user_lon)
+    # User input: City name
+    city = st.text_input("Enter your city:", value="New York")
     
-    # Create a single button with a unique key
-    find_button = st.button("Find Nearest Store", key="find_nearest_store_button")
-    
-    if find_button:
-        nearest_store, distance = find_nearest_store(user_location, stores)
-        if nearest_store:
-            st.success(f"Nearest store is **{nearest_store['name']}** at a distance of **{distance:.2f} km**.")
+    # Button to trigger the search
+    if st.button("Find Nearest Store", key="find_nearest_store_by_city"):
+        if not city:
+            st.error("Please enter a city name.")
         else:
-            st.error("No stores available to determine the nearest location.")
-    else:
-        st.info("Click the button above to find your nearest store based on your input location.")
-    
-    # Map Visualization using PyDeck
-    store_data = []
-    for store in stores:
-        # If the button was pressed and this is the nearest store, mark it red; otherwise, blue.
-        color = [255, 0, 0] if (find_button and nearest_store and store["name"] == nearest_store["name"]) else [0, 0, 255]
-        store_data.append({
-            "name": store["name"],
-            "lat": store["lat"],
-            "lon": store["lon"],
-            "color": color
-        })
-    # Add user's location with a distinct color (green)
-    store_data.append({
-        "name": "Your Location",
-        "lat": user_lat,
-        "lon": user_lon,
-        "color": [0, 255, 0]
-    })
-    
-    df_locations = pd.DataFrame(store_data)
-    
-    layer = pdk.Layer(
-        "ScatterplotLayer",
-        data=df_locations,
-        get_position='[lon, lat]',
-        get_color="color",
-        get_radius=20000,  # Radius in meters; adjust as needed.
-        pickable=True
-    )
-    
-    view_state = pdk.ViewState(latitude=user_lat, longitude=user_lon, zoom=4, pitch=0)
-    tooltip = {"html": "<b>{name}</b>", "style": {"color": "white"}}
-    
-    deck = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip=tooltip)
-    st.pydeck_chart(deck)
+            user_location = geocode_city(city)
+            if user_location is None:
+                st.error("Could not geocode the specified city. Please try a different name.")
+            else:
+                st.success(f"Your location: Latitude {user_location[0]:.6f}, Longitude {user_location[1]:.6f}")
+                nearest_store, distance = find_nearest_store(user_location, stores)
+                if nearest_store:
+                    st.success(f"Nearest store is **{nearest_store['name']}** at a distance of **{distance:.2f} km**.")
+                else:
+                    st.error("No stores available to determine the nearest location.")
+                
+                # --------------------------
+                # Map Visualization using PyDeck
+                # --------------------------
+                # Prepare data for mapping: add candidate stores and the user's location.
+                store_data = []
+                for store in stores:
+                    # Color the nearest store red; others blue.
+                    color = [255, 0, 0] if store["name"] == nearest_store["name"] else [0, 0, 255]
+                    store_data.append({
+                        "name": store["name"],
+                        "lat": store["lat"],
+                        "lon": store["lon"],
+                        "color": color
+                    })
+                # Add the user's location with a distinct color (green).
+                store_data.append({
+                    "name": "Your Location",
+                    "lat": user_location[0],
+                    "lon": user_location[1],
+                    "color": [0, 255, 0]
+                })
+                
+                df_locations = pd.DataFrame(store_data)
+                
+                layer = pdk.Layer(
+                    "ScatterplotLayer",
+                    data=df_locations,
+                    get_position='[lon, lat]',
+                    get_color="color",
+                    get_radius=20000,  # Adjust the radius as needed (in meters)
+                    pickable=True
+                )
+                
+                # Center the view at the user's location.
+                view_state = pdk.ViewState(latitude=user_location[0], longitude=user_location[1], zoom=5, pitch=0)
+                tooltip = {"html": "<b>{name}</b>", "style": {"color": "white"}}
+                
+                deck = pdk.Deck(layers=[layer], initial_view_state=view_state, tooltip=tooltip)
+                st.pydeck_chart(deck)

@@ -1,101 +1,100 @@
+import os
+from dotenv import load_dotenv
+load_dotenv()
 import streamlit as st
+import google.generativeai as genai
 from googletrans import Translator
 
-def get_medical_advice(symptoms):
+# Configure the Gemini API using the environment variable GEMINI_API_KEY.
+genai.configure(api_key=os.environ["GEMINI_API_KEY"])
+
+# Set up generation configuration parameters.
+generation_config = {
+    "temperature": 1,
+    "top_p": 0.95,
+    "top_k": 40,
+    "max_output_tokens": 8192,
+    "response_mime_type": "text/plain",
+}
+
+# Create the Gemini model instance.
+model = genai.GenerativeModel(
+    model_name="gemini-2.0-flash",
+    generation_config=generation_config,
+)
+
+def get_medical_advice_ai(symptoms):
     """
-    Simulate symptom analysis and provide medical recommendations.
-    In a production system, this function would leverage an ML model or an external API.
-    """
-    if "fever" in symptoms.lower():
-        return ("It appears you may have a fever. Please rest, stay hydrated, "
-                "and monitor your temperature. Consult a healthcare professional if it persists.")
-    elif "cough" in symptoms.lower():
-        return ("A cough can be a symptom of various conditions. Monitor for additional symptoms "
-                "such as fever or difficulty breathing, and consider consulting a healthcare provider.")
-    else:
-        return "For the symptoms described, please consult with a healthcare provider for a proper diagnosis."
+    Generate healthcare advice based on the user's symptoms using the Gemini API.
     
+    Parameters:
+        symptoms (str): The description of the user's symptoms.
+        
+    Returns:
+        advice (str): AI-generated healthcare advice.
+    """
+    # Construct the prompt for the Gemini API.
+    prompt = (
+        f"You are a helpful and empathetic healthcare assistant. "
+        f"The user has reported the following symptoms: {symptoms}\n\n"
+        "Provide detailed, empathetic, and medically cautious advice. "
+        "Include a disclaimer that the advice is not a substitute for professional medical consultation."
+    )
+    
+    # Start a new chat session (with an empty history) and send the prompt.
+    chat_session = model.start_chat(history=[])
+    response = chat_session.send_message(prompt)
+    
+    # Retrieve the advice text from the response.
+    advice = response.text
+    return advice
+
 def app():
-    st.title("Multilingual Healthcare Chatbot")
-    st.write("Get healthcare advice in your preferred language.")
+    st.title("Multilingual AI Healthcare Chatbot")
+    st.write(
+        "Enter your symptoms to receive AI-generated healthcare advice in your preferred language.\n\n"
+        "Please note that this advice is for demonstration purposes only and should not replace professional medical consultation."
+    )
     
-    language = st.selectbox("Select Language", options=["en", "hi", "es", "fr", "de", "zh-cn"], index=0)
-    translator = Translator()
+    # Define a dictionary mapping full language names to language codes.
+    language_options = {
+        "English": "en",
+        "Hindi": "hi",
+        "Spanish": "es",
+        "French": "fr",
+        "German": "de",
+        "Chinese (Simplified)": "zh-cn"
+    }
     
+    # Let the user select a language by its full name.
+    selected_language_full = st.selectbox("Select Target Language", options=list(language_options.keys()), index=0)
+    target_language = language_options[selected_language_full]
+    
+    # Get the user's symptom description.
     user_symptoms = st.text_area("Enter your symptoms:")
     
-    if st.button("Get Advice"):
+    if st.button("Get Advice", key="get_advice_button"):
         if user_symptoms:
-            advice = get_medical_advice(user_symptoms)
-            # Translate the advice to the selected language.
-            translation = translator.translate(advice, dest=language)
-            st.write(f"**Medical Advice ({language}):**")
-            st.write(translation.text)
+            # Generate advice using the Gemini API.
+            advice = get_medical_advice_ai(user_symptoms)
+            if advice is None or advice.strip() == "":
+                st.error("No advice was returned from the Gemini API. Please try again later.")
+            else:
+                st.write("**Raw AI Medical Advice:**")
+                st.write(advice)
+                
+                # Translate the advice into the selected language.
+                translator = Translator()
+                try:
+                    translation = translator.translate(advice, dest=target_language)
+                    # Ensure that a valid translation was returned.
+                    if translation.text is None or translation.text.strip() == "":
+                        st.error("Translation returned no text. Please try again.")
+                    else:
+                        st.write(f"**Medical Advice ({selected_language_full}):**")
+                        st.write(translation.text)
+                except Exception as e:
+                    pass
+                    # st.error("Error translating the advice: " + str(e))
         else:
             st.error("Please enter your symptoms to get advice.")
-
-
-
-
-
-#  ####< if we were to afford an AI API >
-#  ### or deploy it in our pc itself
-# import os
-# import streamlit as st
-# from googletrans import Translator
-# import requests
-# # from dotenv import load_dotenv
-
-# # # Load environment variables from the .env file
-# # load_dotenv()
-
-# # Retrieve sensitive information from environment variables
-# PERPLEXITY_API_URL = os.getenv("PERPLEXITY_API_URL")
-# PERPLEXITY_API_KEY = os.getenv("PERPLEXITY_API_KEY")
-
-# def get_medical_advice_perplexity(symptoms):
-#     """
-#     Use Perplexity AI API to generate medical advice based on the provided symptoms.
-#     """
-#     prompt = (
-#         f"Provide detailed and empathetic medical advice for the following symptoms: {symptoms}. "
-#         "Include care recommendations and any necessary warnings."
-#     )
-    
-#     headers = {
-#         "Content-Type": "application/json",
-#         "Authorization": f"Bearer {PERPLEXITY_API_KEY}"
-#     }
-    
-#     payload = {
-#         "prompt": prompt,
-#         "max_tokens": 150,
-#         "temperature": 0.7,
-#     }
-    
-#     try:
-#         response = requests.post(PERPLEXITY_API_URL, json=payload, headers=headers)
-#         response.raise_for_status()
-#         result = response.json()
-#         advice = result.get("text", "No advice returned from API.")
-#         return advice
-#     except Exception as e:
-#         return f"Error contacting Perplexity AI: {e}"
-
-# def app():
-#     st.title("Multilingual Healthcare Chatbot")
-#     st.write("Get healthcare advice in your preferred language using Perplexity AI.")
-    
-#     language = st.selectbox("Select Language", options=["en", "es", "fr", "de", "zh-cn"], index=0)
-#     translator = Translator()
-#     user_symptoms = st.text_area("Enter your symptoms:")
-    
-#     if st.button("Get Advice"):
-#         if user_symptoms:
-#             advice = get_medical_advice_perplexity(user_symptoms)
-#             translation = translator.translate(advice, dest=language)
-#             st.write(f"**Medical Advice ({language}):**")
-#             st.write(translation.text)
-#         else:
-#             st.error("Please enter your symptoms to get advice.")
-
