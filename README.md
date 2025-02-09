@@ -53,3 +53,18 @@ Allow manual reporting and feedback to complement automated data.
 AI & Alert System:
 Develop or integrate computer vision models for real-time hygiene monitoring.
 Build an alert system and historical data logging for compliance tracking and trend analysis.
+
+### TO run the app
+
+To run the app, you need to have Python 3.8 or higher installed on your computer
+
+Step-1
+cd refugee_ai_app
+python -m venv venv
+source venv/bin/activate # On Windows: venv\Scripts\activate
+
+Step-2
+pip install -r requirements.txt
+
+Step-3
+streamlit run app.py
