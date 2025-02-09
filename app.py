@@ -1,6 +1,6 @@
 # app.py
 import streamlit as st
-from modules import auth, food_optimizer, healthcare_chatbot, waste_to_resource, cultural_integration, hygiene_auditor, store_locator
+from .modules import auth, food_optimizer, healthcare_chatbot, waste_to_resource, cultural_integration, hygiene_auditor, store_locator
 
 def main():
     # Initialize the database (creates tables if not present)
