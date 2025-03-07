@@ -56,6 +56,8 @@ Build an alert system and historical data logging for compliance tracking and tr
 
 ### TO run the app
 
+visit https://ckc-humanitarian.streamlit.app/
+
 To run the app, you need to have Python 3.8 or higher installed on your computer
 
 Step-1
